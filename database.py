@@ -1,15 +1,22 @@
 import json
+import datetime as dt
+
+
+def time_now():
+    return (dt.datetime.utcnow() + dt.timedelta(hours=5)).strftime("%H:%M:%S")
 
 
 def ExceptionHandler(exception):
+    print(time_now())
     print(type(exception))
     print(exception.args)
     print(exception)
+    print('\n')
 
 
 def open_db():
     try:
-        with open('users.json', 'r', encoding='utf-8') as f:
+        with open('noSwear/users.json', 'r', encoding='utf-8') as f:
             db_users = json.load(f)
         return db_users
     except Exception as e:
@@ -18,7 +25,7 @@ def open_db():
 
 def save_db(db_users):
     try:
-        with open('users.json', 'w', encoding='utf-8') as f:
+        with open('noSwear/users.json', 'w', encoding='utf-8') as f:
             json.dump(db_users, f, ensure_ascii=False, indent=4)
         return
     except Exception as e:
@@ -40,7 +47,13 @@ def create_user_data(user_id):
             db[f'{user_id}'] = {}
             db[f'{user_id}']['tasks_done'] = 0
             db[f'{user_id}']['tokens'] = 0
-            db[f'{user_id}']['current_task'] = {}
+            db[f'{user_id}']['current_task'] = {
+                'format': None,
+                'ban_list': None,
+                'world_list': None,
+                'effect': None,
+                'file_name': None
+            }
             save_db(db)
             return True
         return False
@@ -73,7 +86,10 @@ def edit_user_current_task(user_id, data, value):
             db[f'{user_id}'][f'current_task']['word_list'] = value
         elif data == 'effect':
             db[f'{user_id}'][f'current_task']['effect'] = value
+        elif data == 'file_name':
+            db[f'{user_id}'][f'current_task']['file_name'] = value
         else:
             return False
+        save_db(db)
     except Exception as e:
         ExceptionHandler(e)

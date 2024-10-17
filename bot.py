@@ -53,6 +53,36 @@ def send_welcome(message):
                      'Ой! Возникла какая-то ошибка... она уже была выслана разработчикам.')
 
 
+@bot.message_handler(commands=['reset'])
+def reset_step_handlers(message):
+    try:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+
+        bot.clear_step_handler_by_chat_id(chat_id)
+        db.edit_user_data(user_id, 'current_task', {})
+
+        if message.text == '/reset':
+            bot.reply_to(message,
+                         'Система успешно перезапущена, все ваши текущие задачи были сброшены.')
+
+    except Exception as e:
+        db.ExceptionHandler(e)
+        bot.reply_to(message,
+                     'Ой! Возникла какая-то ошибка... она уже была выслана разработчикам.')
+
+
+def incorrect_message_step_handler(message, next_step_handler=None, *args):
+    if message.text == '/start' or message.text == '/reset':
+        reset_step_handlers(message)
+        if message.text == '/start':
+            send_welcome(message)
+    else:
+        bot.send_message(message.chat.id,
+                         'Вы неверно указали ваш выбор. Пожалуйста, используйте клавиатуру в боте.')
+        bot.register_next_step_handler(message, next_step_handler, *args)
+
+
 def file_format(message):
     try:
         user_id = message.from_user.id
@@ -65,21 +95,18 @@ def file_format(message):
             kb_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True).add(*kb)
 
             bot.reply_to(message,
-                         'Отлично! Теперь давайте определим, что именно нужно заменить.'
-                         'Пожалуйста, выберите один из вариантов:'
-                         '1. Заменить нецензурную лексику (только на русском языке)'
+                         'Отлично! Теперь давайте определим, что именно нужно заменить. \n\n'
+                         'Пожалуйста, выберите один из вариантов: \n'
+                         '1. Заменить нецензурную лексику (только на русском языке) \n'
                          '2. Самостоятельный выбор слов',
                          reply_markup=kb_markup)
             bot.register_next_step_handler(message, words_to_change)
         else:
-            bot.reply_to(message,
-                         'Вы неверно выбрали формат. Пожалуйста, напишите: "Видео" или "Аудио"')
-            bot.register_next_step_handler(message, file_format)
+            incorrect_message_step_handler(message, file_format)
     except Exception as e:
         db.ExceptionHandler(e)
         bot.reply_to(message,
                      'Ой! Возникла какая-то ошибка... она уже была выслана разработчикам.')
-
 
 
 def words_to_change(message):
@@ -104,10 +131,7 @@ def words_to_change(message):
             bot.register_next_step_handler(message, set_own_word_list)
 
         else:
-            bot.reply_to(message,
-                         'Вы неверно указали ваш выбор. Пожалуйста, напишите: '
-                         '"Нецензурную лексику (русский)" или "Самостоятельный выбор слов"')
-            bot.register_next_step_handler(message, file_format)
+            incorrect_message_step_handler(message, words_to_change)
     except Exception as e:
         db.ExceptionHandler(e)
         bot.reply_to(message,
@@ -116,29 +140,31 @@ def words_to_change(message):
 
 def set_own_word_list(message):
     try:
-        user_id = message.from_user.id
-        word_list = message.text.split(',')
-        db.edit_user_current_task(user_id, 'word_list', word_list)
+        if message.text == '/start' or message.text == '/reset':
+            incorrect_message_step_handler(message)
+        else:
+            word_list = message.text.split(',')
 
-        kb = [types.KeyboardButton('Да'),
-              types.KeyboardButton('Нет')]
-        kb_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True).add(*kb)
+            kb = [types.KeyboardButton('Да'),
+                  types.KeyboardButton('Нет')]
+            kb_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True).add(*kb)
 
-        bot.reply_to(message,
-                     f'Вы выбрали следующие слова, которые будут заменены: \n{" | ".join(word_list)} \nВерно?',
-                     reply_markup=kb_markup)
-        bot.register_next_step_handler(message, confirm_set_own_word_list)
+            bot.reply_to(message,
+                         f'Вы выбрали следующие слова, которые будут заменены: \n{" | ".join(word_list)} \nВерно?',
+                         reply_markup=kb_markup)
+            bot.register_next_step_handler(message, confirm_set_own_word_list, word_list)
     except Exception as e:
         db.ExceptionHandler(e)
         bot.reply_to(message,
                      'Ой! Возникла какая-то ошибка... она уже была выслана разработчикам.')
 
 
-def confirm_set_own_word_list(message):
+def confirm_set_own_word_list(message, word_list):
     try:
         user_id = message.from_user.id
 
         if message.text == 'Да':
+            db.edit_user_current_task(user_id, 'word_list', word_list)
             kb_markup = kb_available_effects()
 
             bot.reply_to(message,
@@ -152,6 +178,8 @@ def confirm_set_own_word_list(message):
             bot.reply_to(message,
                          'Введите слова, которые хотите заменить, через запятую.')
             bot.register_next_step_handler(message, set_own_word_list)
+        else:
+            incorrect_message_step_handler(message, confirm_set_own_word_list, word_list)
     except Exception as e:
         db.ExceptionHandler(e)
         bot.reply_to(message,
@@ -165,16 +193,14 @@ def change_effect(message):
             db.edit_user_current_task(user_id, 'effect', message.text)
 
             bot.reply_to(message,
-                         'Отлично! Теперь пришло время загрузить ваш [видео/аудио] файл для обработки. '
-                         'Пожалуйста, отправьте файл, который вы хотите очистить от нецензурной лексики. '
+                         'Отлично! Теперь пришло время загрузить ваш [видео/аудио] файл для обработки. \n'
+                         'Пожалуйста, отправьте файл, который вы хотите очистить от нецензурной лексики. \n\n'
                          'Убедитесь, что файл соответствует следующим требованиям: \n'
-                         'Формат: **MP4**, **MP3**, **WAV**\n'
+                         'Формат: .mp4 / .mp3 / .wav\n'
                          'После загрузки я начну обработку!')
             bot.register_next_step_handler(message, user_upload_file)
         else:
-            bot.reply_to(message,
-                         'Вы неверно указали ваш выбор. Пожалуйста, используйте клавиатуру в боте.')
-            bot.register_next_step_handler(message, change_effect)
+            incorrect_message_step_handler(message, change_effect)
 
     except Exception as e:
         db.ExceptionHandler(e)
@@ -183,9 +209,19 @@ def change_effect(message):
 
 
 def user_upload_file(message):
+    bot.reply_to(message,
+                 'Тест завершен :)')
+
+
+def bot_error_handler(e):
     pass
 
 
 print('Bot is running.')
+
+bot.enable_save_next_step_handlers(delay=1)
+
+bot.load_next_step_handlers()
+
 if __name__ == '__main__':
     bot.polling(none_stop=True, interval=0)

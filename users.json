@@ -1,0 +1,14 @@
+{
+    "724429584": {
+        "tasks_done": 0,
+        "tokens": 0,
+        "current_task": {
+            "format": "Аудио",
+            "ban_list": "own",
+            "word_list": [
+                "Алашщылы"
+            ],
+            "effect": "Тишина"
+        }
+    }
+}
