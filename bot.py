@@ -35,6 +35,7 @@ def send_welcome(message):
         user_id = message.from_user.id
         if db.check_user_id_in_db(user_id):
             db.edit_user_data(user_id, 'current_task', {})
+            db.clear_user_current_files(user_id)
         else:
             db.create_user_data(user_id)
 
@@ -61,6 +62,7 @@ def reset_step_handlers(message):
 
         bot.clear_step_handler_by_chat_id(chat_id)
         db.edit_user_data(user_id, 'current_task', {})
+        db.clear_user_current_files(user_id)
 
         if message.text == '/reset':
             bot.reply_to(message,
@@ -192,12 +194,16 @@ def change_effect(message):
         if message.text in available_effects:
             db.edit_user_current_task(user_id, 'effect', message.text)
 
-            bot.reply_to(message,
-                         'Отлично! Теперь пришло время загрузить ваш [видео/аудио] файл для обработки. \n'
-                         'Пожалуйста, отправьте файл, который вы хотите очистить от нецензурной лексики. \n\n'
-                         'Убедитесь, что файл соответствует следующим требованиям: \n'
-                         'Формат: .mp4 / .mp3 / .wav\n'
-                         'После загрузки я начну обработку!')
+            message_text = f'Отлично! Теперь пришло время загрузить ваш ' \
+                           f'{db.get_user_current_task(user_id, "format")} файл для обработки. \n' \
+                           'Пожалуйста, отправьте файл, который вы хотите очистить от нецензурной лексики. \n\n' \
+                           'Убедитесь, что файл соответствует следующим требованиям: \n'
+            if db.get_user_current_task(user_id, "format") == "Аудио":
+                message_text += 'Формат: .mp3 / .wav\nПосле загрузки я начну обработку!'
+            else:
+                message_text += 'Формат: .mp4\nПосле загрузки я начну обработку!'
+
+            bot.reply_to(message, message_text)
             bot.register_next_step_handler(message, user_upload_file)
         else:
             incorrect_message_step_handler(message, change_effect)
@@ -209,12 +215,112 @@ def change_effect(message):
 
 
 def user_upload_file(message):
-    bot.reply_to(message,
-                 'Тест завершен :)')
+    user_id = message.from_user.id
 
+    try:
+        if db.get_user_current_task(user_id, 'format') == 'Аудио' and message.content_type == 'audio':
+            audio_file_id = message.audio.file_id
+            path = None
 
-def bot_error_handler(e):
-    pass
+            if message.audio.file_name.split('.')[-1] == 'mp3':
+                path = f'noSwear/files/non_filtered/{user_id}.mp3'
+            elif message.audio.file_name.split('.')[-1] == 'wav':
+                path = f'noSwear/files/non_filtered/{user_id}.wav'
+            else:
+                bot.reply_to(message,
+                             'Формат вашего аудио-файла не поддерживается! Попробуйте отправить аудио-файл нужного '
+                             'формата.')
+                bot.register_next_step_handler(message, user_upload_file)
+
+            if path is not None:
+                bot_msg = bot.reply_to(message,
+                                       'Получил твой файл! Сейчас попробую его скачать...')
+
+                audio_file_info = bot.get_file(audio_file_id)
+                downloaded_audio_file = bot.download_file(audio_file_info.file_path)
+                with open(path, 'wb') as new_audio_file:
+                    new_audio_file.write(downloaded_audio_file)
+
+                db.edit_user_current_task(user_id, 'file_exist', 'non_filtered')
+
+                bot_msg = bot.reply_to(bot_msg,
+                                       '✅ Файл успешно загружен! Я начинаю обработку. \n'
+                                       '⏳ Это может занять некоторое время, в зависимости от размера файла. \n'
+                                       'Пожалуйста, подождите. Когда обработка завершится, я отправлю вам очищенную '
+                                       'версию файла.')
+
+                bot.reply_to(bot_msg,
+                             f'На этом демо-версия окончена! '
+                             f'Файл был успешно загружен в систему (директория noSwear/files/non_filtered/{user_id}')
+
+        elif db.get_user_current_task(user_id, 'format') == 'Видео' and (message.content_type == 'video' or
+                                                                         (message.content_type == 'document' and
+                                                                          message.document.file_name.split('.')[
+                                                                              -1] == 'mp4')):
+            if message.content_type == 'video':
+                video_file_id = message.video.file_id
+            path = None
+
+            if message.video.file_name.split('.')[-1] == 'mp4':
+                path = f'noSwear/files/non_filtered/{user_id}.mp4'
+            else:
+                bot.reply_to(message,
+                             'Формат вашего видео-файла не поддерживается! Попробуйте отправить видео-файл нужного '
+                             'формата.')
+                bot.register_next_step_handler(message, user_upload_file)
+
+            if message.content_type == 'document':
+                bot_msg = bot.reply_to(message,
+                                       'Получил твой файл! Сейчас попробую его скачать...')
+
+                doc_file_id = message.document.file_id
+                path = f'noSwear/files/non_filtered/{user_id}.mp4'
+                doc_file_info = bot.get_file(doc_file_id)
+                downloaded_doc_file = bot.download_file(doc_file_info.file_path)
+                with open(path, 'wb') as new_doc_file:
+                    new_doc_file.write(downloaded_doc_file)
+
+                db.edit_user_current_task(user_id, 'file_exist', 'non_filtered')
+
+                bot_msg = bot.reply_to(bot_msg,
+                                       '✅ Файл успешно загружен! Я начинаю обработку. \n'
+                                       '⏳ Это может занять некоторое время, в зависимости от размера файла. \n'
+                                       'Пожалуйста, подождите. Когда обработка завершится, я отправлю вам очищенную '
+                                       'версию файла.')
+
+                bot.reply_to(bot_msg,
+                             f'На этом демо-версия окончена! '
+                             f'Файл был успешно загружен в систему (директория noSwear/files/non_filtered/{user_id}')
+
+            if path is not None:
+                bot_msg = bot.reply_to(message,
+                                       'Получил твой файл! Сейчас попробую его скачать...')
+
+                video_file_info = bot.get_file(video_file_id)
+                downloaded_video_file = bot.download_file(video_file_info.file_path)
+                with open(path, 'wb') as new_doc_file:
+                    new_doc_file.write(downloaded_video_file)
+
+                db.edit_user_current_task(user_id, 'file_exist', 'non_filtered')
+
+                bot_msg = bot.reply_to(bot_msg,
+                                       '✅ Файл успешно загружен! Я начинаю обработку. \n'
+                                       '⏳ Это может занять некоторое время, в зависимости от размера файла. \n'
+                                       'Пожалуйста, подождите. Когда обработка завершится, я отправлю вам очищенную '
+                                       'версию файла.')
+
+                bot.reply_to(bot_msg,
+                             f'На этом демо-версия окончена! '
+                             f'Файл был успешно загружен в систему (директория noSwear/files/non_filtered/{user_id}')
+        else:
+            bot.reply_to(message,
+                         'Формат вашего файла не поддерживается! Попробуйте отправить файл нужного формата.')
+            bot.register_next_step_handler(message, user_upload_file)
+            return
+    except Exception as e:
+        db.ExceptionHandler(e)
+        bot.reply_to(message,
+                     'Возникла ошибка!')
 
 
 print('Bot is running.')

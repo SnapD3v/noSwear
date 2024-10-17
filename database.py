@@ -1,5 +1,6 @@
 import json
 import datetime as dt
+import os
 
 
 def time_now():
@@ -87,9 +88,23 @@ def edit_user_current_task(user_id, data, value):
         elif data == 'effect':
             db[f'{user_id}'][f'current_task']['effect'] = value
         elif data == 'file_name':
-            db[f'{user_id}'][f'current_task']['file_name'] = value
+            db[f'{user_id}'][f'current_task']['file_exist'] = value
         else:
             return False
         save_db(db)
     except Exception as e:
         ExceptionHandler(e)
+
+
+def get_user_current_task(user_id, data):
+    db = open_db()
+    return db[f'{user_id}'][f'current_task'][f'{data}']
+
+
+def clear_user_current_files(user_id):
+    if os.path.exists(f'noSwear/files/non_filtered/{user_id}.mp3'):
+        os.remove(f'noSwear/files/non_filtered/{user_id}.mp3')
+    elif os.path.exists(f'noSwear/files/non_filtered/{user_id}.mp4'):
+        os.remove(f'noSwear/files/non_filtered/{user_id}.mp4')
+    elif os.path.exists(f'noSwear/files/non_filtered/{user_id}.wav'):
+        os.remove(f'noSwear/files/non_filtered/{user_id}.wav')
