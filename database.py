@@ -8,9 +8,8 @@ def time_now():
 
 
 def ExceptionHandler(exception):
-    print(time_now())
+    print(f'[{time_now()}]')
     print(type(exception))
-    print(exception.args)
     print(exception)
     print('\n')
 
@@ -48,13 +47,7 @@ def create_user_data(user_id):
             db[f'{user_id}'] = {}
             db[f'{user_id}']['tasks_done'] = 0
             db[f'{user_id}']['tokens'] = 0
-            db[f'{user_id}']['current_task'] = {
-                'format': None,
-                'ban_list': None,
-                'world_list': None,
-                'effect': None,
-                'file_name': None
-            }
+            db[f'{user_id}']['current_task'] = {}
             save_db(db)
             return True
         return False
@@ -87,7 +80,7 @@ def edit_user_current_task(user_id, data, value):
             db[f'{user_id}'][f'current_task']['word_list'] = value
         elif data == 'effect':
             db[f'{user_id}'][f'current_task']['effect'] = value
-        elif data == 'file_name':
+        elif data == 'file_exist':
             db[f'{user_id}'][f'current_task']['file_exist'] = value
         else:
             return False
