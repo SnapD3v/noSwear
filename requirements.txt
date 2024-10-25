@@ -1,0 +1,4 @@
+pyTelegramBotAPI==4.23.0
+vosk==0.3.45
+pydub==0.25.1
+moviepy==1.0.3
