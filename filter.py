@@ -49,13 +49,13 @@ def get_timestamps(audio_file_path: str) -> List[dict]:
     return []
 
 
-def get_timestamps_for_filtering(timestamps: List[dict]) -> List[dict]:
+def get_timestamps_for_filtering(timestamps: List[dict], word_list: List[dict]) -> List[dict]:
 
     timestamps_for_filtering = []
 
     for word_info in timestamps:
 
-        if word_info["word"] in forbidden_words:
+        if word_info["word"] in word_list:
             timestamps_for_filtering.append(
                 {
                     "word": word_info["word"],
@@ -66,12 +66,12 @@ def get_timestamps_for_filtering(timestamps: List[dict]) -> List[dict]:
     return timestamps_for_filtering
 
 
-def filter_audio_file(audio_file_path: str) -> AudioSegment:
+def filter_audio_file(audio_file_path: str, word_list: List[dict]) -> AudioSegment:
 
     path_converted_audio = convert_audio_to_required_format(audio_file_path)
 
     timestamps = get_timestamps(path_converted_audio)
-    timestamps_for_filtering = get_timestamps_for_filtering(timestamps)
+    timestamps_for_filtering = get_timestamps_for_filtering(timestamps, word_list)
 
     os.remove(path_converted_audio)
 

@@ -3,16 +3,16 @@ from filter import *
 from moviepy.editor import VideoFileClip, AudioFileClip
 
 
-def process_audio_file(input_audio_file_path: str, output_audio_file_path: str) -> None:
-    new_audio_file = filter_audio_file(input_audio_file_path)
+def process_audio_file(input_audio_file_path: str, output_audio_file_path: str, word_list: List[dict]) -> None:
+    new_audio_file = filter_audio_file(input_audio_file_path, word_list)
 
     new_audio_file.export(output_audio_file_path, format="wav")
 
 
-def process_video_file(input_video_file_path: str, output_video_file_path: str) -> None:
+def process_video_file(input_video_file_path: str, output_video_file_path: str, word_list: List[dict]) -> None:
     audio_file_path = get_audio_from_video(input_video_file_path)
 
-    new_audio_file = filter_audio_file(audio_file_path)
+    new_audio_file = filter_audio_file(audio_file_path, word_list)
     new_audio_file.export(audio_file_path, format="wav")
 
     new_video_file = VideoFileClip(input_video_file_path).set_audio(AudioFileClip(audio_file_path))

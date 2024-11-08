@@ -13,20 +13,27 @@ def processing_user_file(message):
     user_id = message.from_user.id
     try:
         user_file_extension = db.get_user_current_task(user_id, 'file_extension')
-
+        if db.get_user_current_task(user_id, 'ban_list') == 'own':
+            word_list = db.get_user_current_task(user_id, 'word_list')
+        else:
+            word_list = forbidden_words
         if db.get_user_current_task(user_id, 'format') == 'Аудио':
             process_audio_file(input_audio_file_path=f'files/non_filtered/{user_id}{user_file_extension}',
-                               output_audio_file_path=f'files/filtered/{user_id}.wav')
+                               output_audio_file_path=f'files/filtered/{user_id}.wav',
+                               word_list=word_list)
 
             bot.send_audio(message.chat.id,
                            audio=open(f'files/filtered/{user_id}.wav', 'rb'),
                            caption='✅ Файл успешно обработан!')
 
             db.clear_user_current_files(user_id, 'filtered')
+            db.clear_user_current_files(user_id, 'non_filtered')
+            return
 
         elif db.get_user_current_task(user_id, 'format') == 'Видео':
             process_video_file(input_video_file_path=f'files/non_filtered/{user_id}{user_file_extension}',
-                               output_video_file_path=f'files/filtered/{user_id}{user_file_extension}')
+                               output_video_file_path=f'files/filtered/{user_id}{user_file_extension}',
+                               word_list=word_list)
 
             bot.send_video(message.chat.id,
                            open(f'files/filtered/{user_id}{user_file_extension}', 'rb'),
@@ -34,6 +41,8 @@ def processing_user_file(message):
                            supports_streaming=True)
 
             db.clear_user_current_files(user_id, 'filtered')
+            db.clear_user_current_files(user_id, 'non_filtered')
+            return
 
     except Exception as e:
         db.ExceptionHandler(e)
@@ -249,7 +258,7 @@ def words_to_change(message):
             db.edit_user_current_task(user_id, 'ban_list', 'own')
 
             bot.reply_to(message,
-                         'Введите слова, которые хотите заменить, через запятую.')
+                         'Введите слова, которые хотите заменить.')
             bot.register_next_step_handler(message, set_own_word_list)
 
         else:
@@ -265,7 +274,7 @@ def set_own_word_list(message):
         if message.text == '/start' or message.text == '/reset':
             incorrect_message_step_handler(message)
         else:
-            word_list = message.text.split(',')
+            word_list = [word.replace(',', '') for word in message.text.split(' ')]
 
             kb = [types.KeyboardButton('Да'),
                   types.KeyboardButton('Нет')]
@@ -298,7 +307,7 @@ def confirm_set_own_word_list(message, word_list):
             db.edit_user_current_task(user_id, 'word_list', '')
 
             bot.reply_to(message,
-                         'Введите слова, которые хотите заменить, через запятую.')
+                         'Введите слова, которые хотите заменить.')
             bot.register_next_step_handler(message, set_own_word_list)
         else:
             incorrect_message_step_handler(message, confirm_set_own_word_list, word_list)
