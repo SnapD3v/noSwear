@@ -8,15 +8,14 @@ def time_now():
 
 
 def ExceptionHandler(exception):
-    print(f'[{time_now()}]')
-    print(type(exception))
+    print(f'[{time_now()}] Возникла ошибка!')
     print(exception)
-    print('\n')
+    print('---')
 
 
 def open_db():
     try:
-        with open('noSwear/users.json', 'r', encoding='utf-8') as f:
+        with open('users.json', 'r', encoding='utf-8') as f:
             db_users = json.load(f)
         return db_users
     except Exception as e:
@@ -25,7 +24,7 @@ def open_db():
 
 def save_db(db_users):
     try:
-        with open('noSwear/users.json', 'w', encoding='utf-8') as f:
+        with open('users.json', 'w', encoding='utf-8') as f:
             json.dump(db_users, f, ensure_ascii=False, indent=4)
         return
     except Exception as e:
@@ -55,11 +54,11 @@ def create_user_data(user_id):
         ExceptionHandler(e)
 
 
-def edit_user_data(user_id, data, value):
+def edit_user_data(user_id, data: str, value):
     try:
         db = open_db()
         if check_user_id_in_db(user_id):
-            db[f'{user_id}'][f'{data}'] = value
+            db[f'{user_id}'][data] = value
             save_db(db)
             return True
         else:
@@ -69,19 +68,19 @@ def edit_user_data(user_id, data, value):
         ExceptionHandler(e)
 
 
-def edit_user_current_task(user_id, data, value):
+def edit_user_current_task(user_id, data: str, value):
     try:
         db = open_db()
-        if data == 'format':
-            db[f'{user_id}'][f'current_task']['format'] = value
-        elif data == 'ban_list':
-            db[f'{user_id}'][f'current_task']['ban_list'] = value
-        elif data == 'word_list':
-            db[f'{user_id}'][f'current_task']['word_list'] = value
-        elif data == 'effect':
-            db[f'{user_id}'][f'current_task']['effect'] = value
-        elif data == 'file_exist':
-            db[f'{user_id}'][f'current_task']['file_exist'] = value
+        data_list = [
+            'format',  # Формат файла (аудио/видео)
+            'ban_list',  # Список запрещенных слов (стандарт/кастомный)
+            'word_list',  # Если кастомный список, то слова записываются сюда
+            'effect',  # Эффект для цензуры
+            'file_path',  # Путь к папке, где расположен файл юзера ( files/.../ )
+            'file_extension'  # расширение файла (напр. - .mp4)
+        ]
+        if data in data_list:
+            db[f'{user_id}'][f'current_task'][data] = value
         else:
             return False
         save_db(db)
@@ -89,21 +88,20 @@ def edit_user_current_task(user_id, data, value):
         ExceptionHandler(e)
 
 
-def get_user_current_task(user_id, data):
+def get_user_current_task(user_id, data: str):
     try:
         db = open_db()
-        return db[f'{user_id}'][f'current_task'][f'{data}']
+        return db[f'{user_id}'][f'current_task'][data]
     except Exception as e:
         ExceptionHandler(e)
 
 
-def clear_user_current_files(user_id):
+def clear_user_current_files(user_id, folder):
     try:
-        if os.path.exists(f'noSwear/files/non_filtered/{user_id}.mp3'):
-            os.remove(f'noSwear/files/non_filtered/{user_id}.mp3')
-        elif os.path.exists(f'noSwear/files/non_filtered/{user_id}.mp4'):
-            os.remove(f'noSwear/files/non_filtered/{user_id}.mp4')
-        elif os.path.exists(f'noSwear/files/non_filtered/{user_id}.wav'):
-            os.remove(f'noSwear/files/non_filtered/{user_id}.wav')
+        extensions = ['mp3', 'wav', 'mp4', 'avi']
+        for extension in extensions:
+            path = f'files/{folder}/{user_id}.{extension}'
+            if os.path.exists(path):
+                os.remove(path)
     except Exception as e:
         ExceptionHandler(e)

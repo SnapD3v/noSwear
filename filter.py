@@ -10,7 +10,6 @@ import os
 
 SetLogLevel(0)
 
-# model = None
 
 def convert_audio_to_required_format(origin_audio_file_path: str) -> str:
 
