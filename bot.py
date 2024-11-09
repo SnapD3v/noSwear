@@ -210,6 +210,8 @@ def download_user_file(message, format):
             return True
     except Exception as e:
         db.ExceptionHandler(e)
+        bot.reply_to(message,
+                     'Ой! Возникла какая-то ошибка, она уже была передана разработчикам.')
         return False
 
 
