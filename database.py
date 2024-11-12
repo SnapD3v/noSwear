@@ -1,6 +1,7 @@
 import json
 import datetime as dt
 import os
+from config import *
 
 
 def time_now():
@@ -98,8 +99,8 @@ def get_user_current_task(user_id, data: str):
 
 def clear_user_current_files(user_id, folder):
     try:
-        extensions = ['mp3', 'wav', 'mp4', 'avi']
-        for extension in extensions:
+        # extensions = ['mp3', 'wav', 'mp4', 'avi']
+        for extension in EXTENSIONS:
             path = f'files/{folder}/{user_id}.{extension}'
             if os.path.exists(path):
                 os.remove(path)

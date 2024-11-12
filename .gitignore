@@ -47,3 +47,5 @@ vosk-model-ru-0.42/rnnlm/special_symbol_opts.txt
 vosk-model-ru-0.42/rnnlm/unigram_probs.txt
 vosk-model-ru-0.42/rnnlm/word_feats.txt
 token.txt
+key
+key.pub

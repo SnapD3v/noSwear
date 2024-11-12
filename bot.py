@@ -4,7 +4,7 @@ import database as db
 import time
 from process import *
 
-API_TOKEN = input('Введите токен: ')
+API_TOKEN = open("token.txt", "r").readline()
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -142,7 +142,8 @@ def download_user_file(message, format):
         if format == 'Аудио':
             audio_file_id = message.audio.file_id
 
-            file_extension = '.' + message.audio.file_name.split('.')[-1]
+            print(f'[{db.time_now()}] {user_id} - sent file "{message.audio.file_name}" - audio recieved')
+            file_extension = '.' + message.audio.file_name.split('.')[-1].lower()
             db.edit_user_current_task(user_id, 'file_extension', file_extension)
             path += file_extension
 
@@ -160,7 +161,8 @@ def download_user_file(message, format):
         elif format == 'Видео':
             video_file_id = message.video.file_id
 
-            file_extension = '.' + message.video.file_name.split('.')[-1]
+            print(f'[{db.time_now()}] {user_id} - sent file "{message.video.file_name}" - video recieved')
+            file_extension = '.' + message.video.file_name.split('.')[-1].lower()
             db.edit_user_current_task(user_id, 'file_extension', file_extension)
             path += file_extension
 
@@ -178,7 +180,8 @@ def download_user_file(message, format):
         elif format == 'Док_Видео':
             doc_file_id = message.document.file_id
 
-            file_extension = '.' + message.document.file_name.split('.')[-1]
+            print(f'[{db.time_now()}] {user_id} - sent file "{message.document.file_name}" - video doc recieved')
+            file_extension = '.' + message.document.file_name.split('.')[-1].lower()
             db.edit_user_current_task(user_id, 'file_extension', file_extension)
             path += file_extension
 
@@ -195,7 +198,8 @@ def download_user_file(message, format):
         elif format == 'Док_Аудио':
             doc_file_id = message.document.file_id
 
-            file_extension = '.' + message.document.file_name.split('.')[-1]
+            print(f'[{db.time_now()}] {user_id} - sent file "{message.document.file_name}" - audio doc recieved')
+            file_extension = '.' + message.document.file_name.split('.')[-1].lower()
             db.edit_user_current_task(user_id, 'file_extension', file_extension)
             path += file_extension
 
@@ -276,8 +280,7 @@ def set_own_word_list(message):
         if message.text == '/start' or message.text == '/reset':
             incorrect_message_step_handler(message)
         else:
-            word_list = [word.replace(',', '') for word in message.text.split(' ')]
-
+            word_list = [word.replace(',', '').lower() for word in message.text.split(' ')]
             kb = [types.KeyboardButton('Да'),
                   types.KeyboardButton('Нет')]
             kb_markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True).add(*kb)
@@ -330,9 +333,9 @@ def change_effect(message):
                            'Пожалуйста, отправьте файл, который вы хотите очистить от нецензурной лексики. \n\n' \
                            'Убедитесь, что файл соответствует следующим требованиям: \n'
             if db.get_user_current_task(user_id, "format") == "Аудио":
-                message_text += 'Формат: .mp3 / .wav\nПосле загрузки я начну обработку!'
+                message_text += 'Формат: .wav\nПосле загрузки я начну обработку!'
             else:
-                message_text += 'Формат: .mp4 / .avi\nПосле загрузки я начну обработку!'
+                message_text += 'Формат: .mp4\nПосле загрузки я начну обработку!'
 
             bot.reply_to(message, message_text)
             bot.register_next_step_handler(message, user_upload_file)
@@ -353,17 +356,18 @@ def user_upload_file(message):
         if message.text == '/start' or message.text == '/reset':
             incorrect_message_step_handler(message)
             return
-        if db.get_user_current_task(user_id, 'format') == 'Аудио' and message.content_type == 'audio':
+        if db.get_user_current_task(user_id, 'format') == 'Аудио' and message.content_type == 'audio' and \
+                message.audio.file_name.split('.')[-1].lower() in EXTENSIONS:
             flag = download_user_file(message, 'Аудио')
-        elif db.get_user_current_task(user_id, 'format') == 'Видео' and message.content_type == 'video':
+        elif db.get_user_current_task(user_id, 'format') == 'Видео' and message.content_type == 'video' and \
+                message.video.file_name.split('.')[-1].lower() in EXTENSIONS:
             flag = download_user_file(message, 'Видео')
         elif message.content_type == 'document':
-            file_extension = message.document.file_name.split('.')[-1]
-            if db.get_user_current_task(user_id, 'format') == 'Видео' and \
-                    (file_extension == 'mp4' or file_extension == 'avi'):
+            print(f'[{db.time_now()}] {user_id} - sent file "{message.document.file_name}" - doc recieved')
+            file_extension = message.document.file_name.split('.')[-1].lower()
+            if db.get_user_current_task(user_id, 'format') == 'Видео' and file_extension in EXTENSIONS:
                 flag = download_user_file(message, 'Док_Видео')
-            elif db.get_user_current_task(user_id, 'format') == 'Аудио' and \
-                    (file_extension == 'mp3' or file_extension == 'wav'):
+            elif db.get_user_current_task(user_id, 'format') == 'Аудио' and file_extension in EXTENSIONS:
                 flag = download_user_file(message, 'Док_Аудио')
         else:
             bot.reply_to(message,
