@@ -1,4 +1,3 @@
-import json
 import datetime as dt
 import os
 from config import *
@@ -9,9 +8,13 @@ def time_now():
 
 
 def ExceptionHandler(exception):
-    print(f'[{time_now()}] Возникла ошибка!')
-    print(exception)
-    print('---')
+    print(f'\n---\n'
+          f'[{time_now()}] Возникла ошибка! [database.py]\n'
+          f'[Type]: {type(exception)}\n'
+          f'[Exception Context]: {exception.__context__}\n'
+          f'[Exception Cause]: {exception.__cause__}\n'
+          f'[Exception Suppress Context]: {exception.__suppress_context__}\n'
+          f'---\n')
 
 
 def open_db():
@@ -19,8 +22,8 @@ def open_db():
         with open('users.json', 'r', encoding='utf-8') as f:
             db_users = json.load(f)
         return db_users
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
 def save_db(db_users):
@@ -28,19 +31,19 @@ def save_db(db_users):
         with open('users.json', 'w', encoding='utf-8') as f:
             json.dump(db_users, f, ensure_ascii=False, indent=4)
         return
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def check_user_id_in_db(user_id):
+def check_user_id_in_db(user_id: int):
     try:
         db = open_db()
         return f'{user_id}' in db
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def create_user_data(user_id):
+def create_user_data(user_id: int):
     try:
         db = open_db()
         if not check_user_id_in_db(user_id):
@@ -51,11 +54,11 @@ def create_user_data(user_id):
             save_db(db)
             return True
         return False
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def edit_user_data(user_id, data: str, value):
+def edit_user_data(user_id: int, data: str, value):
     try:
         db = open_db()
         if check_user_id_in_db(user_id):
@@ -65,18 +68,17 @@ def edit_user_data(user_id, data: str, value):
         else:
             create_user_data(user_id)
             edit_user_data(user_id, data, value)
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def edit_user_current_task(user_id, data: str, value):
+def edit_user_current_task(user_id: int, data: str, value):
     try:
         db = open_db()
         data_list = [
             'format',  # Формат файла ( Аудио / Видео )
             'ban_list',  # Какой список запрещенных слов использовать ( default / own )
             'word_list',  # Если кастомный список, то слова записываются сюда (list)
-            'effect',  # Эффект для цензуры (напр. - Тишина)
             'file_path',  # Путь к папке, где расположен файл юзера ( files/.../ )
             'file_extension'  # расширение файла (напр. - .mp4)
         ]
@@ -85,24 +87,37 @@ def edit_user_current_task(user_id, data: str, value):
         else:
             return False
         save_db(db)
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def get_user_current_task(user_id, data: str):
+def get_user_task_detail(user_id: int, data: str):
     try:
         db = open_db()
         return db[f'{user_id}'][f'current_task'][data]
-    except Exception as e:
-        ExceptionHandler(e)
+    except Exception as error:
+        ExceptionHandler(error)
 
 
-def clear_user_current_files(user_id, folder):
+def is_exist_user_task_detail(user_id: int, data: str):
     try:
-        # extensions = ['mp3', 'wav', 'mp4', 'avi']
-        for extension in EXTENSIONS:
-            path = f'files/{folder}/{user_id}.{extension}'
-            if os.path.exists(path):
-                os.remove(path)
-    except Exception as e:
-        ExceptionHandler(e)
+        db = open_db()
+        return True if data in db[f'{user_id}']['current_task'] else False
+    except Exception as error:
+        ExceptionHandler(error)
+
+
+def clear_user_current_files(user_id: int, folder) -> None:
+    try:
+        path = f'files/{folder}/'
+        for file_name in os.listdir(path):
+            if str(user_id) in file_name:
+                os.remove(path+file_name)
+    except Exception as error:
+        ExceptionHandler(error)
+
+
+def reset_user_task(user_id: int) -> None:
+    edit_user_data(user_id, 'current_task', {})
+    clear_user_current_files(user_id, 'filtered')
+    clear_user_current_files(user_id, 'non_filtered')
