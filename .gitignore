@@ -18,4 +18,4 @@ venv.bak/
 dmypy.json
 
 # Process model
-vosk-model-ru-0.42
+vosk-model-ru-0.42/
