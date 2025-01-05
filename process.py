@@ -9,48 +9,42 @@ processor = Processor()
 log = ColorLogger(name="Media").get_logger()
 
 
-def process(file_path: str, ban_words: list[str], sound: str):
+def process(file_path: str, ban_words: list[str], sound_name: str):
     try:
-        format = file_path[file_path.rindex(".") + 1:].lower()
-        if format in config.VIDEO_EXTENSIONS:
+        extension = file_path[file_path.rindex(".") + 1:].lower()
+        if extension in config.VIDEO_EXTENSIONS:
             video = Video(file_path=file_path)
-            converted_audio = video.convert_audio_to_required_format(
-                path=video.audiotrack_path
-            )
             completed_audio_path = processor.filter(
-                audio_path=video.audiotrack_path,
-                converted_audio_path=converted_audio.path,
+                audio=video.audiotrack,
                 ban_words=ban_words,
-                sound=sound,
+                sound_name=sound_name,
             )
-            completed_video_path = video.merge(
-                audiotrack_path=completed_audio_path)
-
+            completed_video_path = video.merge(audiotrack_path=completed_audio_path)
+            if os.path.isfile(completed_audio_path):
+                os.remove(completed_audio_path)
+                
+            if os.path.isfile(video.audiotrack.converted_segment_path):
+                os.remove(video.audiotrack.converted_segment_path)
+                
+            if os.path.isfile(video.audiotrack.file_path):
+                os.remove(video.audiotrack.file_path)
             return completed_video_path
 
-        if format in config.AUDIO_EXTENSIONS:
-
-            # if format == "oga":
-            #     new_file_path = file_path
-            #     new_file_path = new_file_path[:-1] + "g"
-            #     new_file_path = "g" + new_file_path[1:]
-            #     os.rename(file_path, new_file_path)
-            #     file_path = new_file_path
-
+        if extension in config.AUDIO_EXTENSIONS:
             audio = Audio(file_path=file_path)
-            
-            converted_audio = audio.convert_audio_to_required_format(
-                path=audio.file_path
-            )
             completed_audio_path = processor.filter(
-                audio_path=audio.file_path,
-                converted_audio_path=converted_audio.path,
+                audio=audio,
                 ban_words=ban_words,
-                sound=sound,
+                sound_name=sound_name,
             )
-
+            if os.path.isfile(audio.file_path):
+                os.remove(audio.file_path)
+                
+            if os.path.isfile(audio.converted_segment_path):
+                os.remove(audio.converted_segment_path)
             return completed_audio_path
         return file_path
+
     except Exception as e:
         log.error(e, exc_info=True)
         return file_path

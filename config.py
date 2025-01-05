@@ -1,16 +1,31 @@
-import json
-from vosk import Model
+import os
 
-MODEL_PATH = "vosk-model-small-ru-0.22"
-MODEL = Model(MODEL_PATH)
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BOT_TOKEN = os.environ.get('BOT_TOKEN')
+ALLOWED_MEDIA_TYPES = ["audio", "voice", "video", "video_note"]
+ESCAPE_TYPES = [
+    "document",
+    "photo",
+    "sticker",
+    "location",
+    "contact",
+    "poll",
+    "dice",
+    "venue",
+    "animation",
+    "any_other_types_etc"
+]
+GLOBAL_FILE_DICT = {}
+
+
+MODEL_PATH = "vosk-model-ru-0.42"
 
 REQUIRED_COUNT_CHANNELS = 1
 REQUIRED_FRAME_RATE = 16000
 FRAME_BLOCK_SIZE = 32000
 
-EXTENSIONS = ['mp4', 'avi', 'mp3', 'wav', 'oga', 'ogg']
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi']
 AUDIO_EXTENSIONS = ['mp3', 'wav', 'raw', 'ogg', 'oga']
-
-with open('ban_words.json', 'r', encoding='utf-8') as f:
-    forbidden_words = json.load(f)['ru_WordList']

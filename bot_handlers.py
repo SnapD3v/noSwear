@@ -3,7 +3,7 @@ import uuid
 
 from telebot import types
 
-from bot_config import GLOBAL_FILE_DICT
+from config import GLOBAL_FILE_DICT
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
 from logger import ColorLogger
 from media_manager import process_file, download_and_save_file
@@ -49,6 +49,7 @@ def finalize_processing(bot, chat_id, short_id):
     if os.path.isfile(result_path):
         with open(result_path, "rb") as rf:
             bot.send_document(chat_id, rf)
+        os.remove(result_path)
     else:
         log.warning(f"Result file not found for {short_id}")
         bot.send_message(chat_id, "Файл не найден.")

@@ -12,7 +12,6 @@ def load_words_from_json(path):
     if not isinstance(words, list):
         log.error("JSON is not a list")
         return []
-    log.debug(f"Loaded words: {words}")
     return words
 
 

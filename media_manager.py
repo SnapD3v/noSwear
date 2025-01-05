@@ -8,8 +8,9 @@ log = ColorLogger(name="MediaManager").get_logger()
 
 def process_file(file_path, replacement_sound, ban_words):
     log.info(f"Starting process for {file_path} with sound={replacement_sound}")
-    file_path = process(file_path=file_path, ban_words=ban_words, sound=replacement_sound)
-    return file_path
+    result_file_path = process(file_path=file_path, ban_words=ban_words, sound_name=replacement_sound)
+    
+    return result_file_path
 
 
 def generate_temp_file_name(chat_id, file_id, ext):

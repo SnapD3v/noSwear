@@ -1,5 +1,5 @@
 import telebot
-from bot_config import BOT_TOKEN, ALLOWED_MEDIA_TYPES, ESCAPE_TYPES
+from config import BOT_TOKEN, ALLOWED_MEDIA_TYPES, ESCAPE_TYPES
 from bot_handlers import on_start, on_media, on_document, on_unsupported, on_callback
 from logger import ColorLogger
 

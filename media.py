@@ -1,4 +1,4 @@
-from abc import ABCMeta
+import os
 from moviepy.editor import VideoFileClip, AudioFileClip
 from pydub import AudioSegment
 import tempfile
@@ -8,75 +8,67 @@ from logger import ColorLogger
 log = ColorLogger(name="Media").get_logger()
 
 
-class ConvertedAudio:
+class Audio:
 
-    def __init__(self, path):
-        self.path = path
+    def __init__(self, file_path: str):
+        base, ext = os.path.splitext(file_path)
 
+        self.file_path = file_path
+        self.extension = ext
+        self.segment = AudioSegment.from_file(self.file_path, format=self.extension[1:])
 
-class Media(metaclass=ABCMeta):
+        self.converted_segment = None
+        self.converted_segment_path = None
 
-    def convert_audio_to_required_format(self, path: str) -> ConvertedAudio:
-        log.info("Converting audio to standard format: %s", path)
-        suffix = path[path.rindex('.') + 1:].lower()
-        log.debug("Current suffix: %s", suffix)
-        audio_segment = AudioSegment.from_file(path, format='ogg')
-        audio_segment = self._setup_default_params(audio_segment=audio_segment)
-        converted_audio_path = self._save_segment(audio_segment=audio_segment)
-        converted_audio = ConvertedAudio(converted_audio_path)
-        return converted_audio
+        log.info("Converting audio to standard format: %s", self.file_path)
+        self._convert_audio_to_required_format()
 
-    def _setup_default_params(self, audio_segment: AudioSegment) -> AudioSegment:
-        audio_segment = audio_segment.set_channels(
-            channels=REQUIRED_COUNT_CHANNELS)
-        audio_segment = audio_segment.set_frame_rate(
-            frame_rate=REQUIRED_FRAME_RATE)
+    def _convert_audio_to_required_format(self):
 
-        return audio_segment
+        self._setup_default_params()
+        self._save_converted_segment()
+        log.debug("Saved segment: %s", self.converted_segment_path)
 
-    def _save_segment(self, audio_segment: AudioSegment) -> str:
+    def _setup_default_params(self):
+        converted_segment = self.segment
+        converted_segment = converted_segment.set_channels(channels=REQUIRED_COUNT_CHANNELS)
+        converted_segment = converted_segment.set_frame_rate(frame_rate=REQUIRED_FRAME_RATE)
+        self.converted_segment = converted_segment
+
+    def _save_converted_segment(self):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-            converted_audio_path = temp_file.name
-            audio_segment.export(converted_audio_path, format="wav")
-        return converted_audio_path
+            converted_segment_path = temp_file.name
+            self.converted_segment.export(converted_segment_path, format="wav")
+        self.converted_segment_path = converted_segment_path
 
 
-class Audio(Media):
-
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-        self.format = self.file_path[self.file_path.rindex('.'):].lower()
-        self.audio_segment = AudioSegment.from_file(file_path, format=self.format)
-
-
-class Video(Media):
+class Video:
 
     def __init__(self, file_path: str):
         self.file_path = file_path
-        self.audiotrack_path = self._save_audiotrack()
-        self.format = self.file_path[self.file_path.rindex('.'):].lower()
+        base, ext = os.path.splitext(file_path)
+        self.extension = ext
+        self.clip = VideoFileClip(self.file_path)
+        audiotrack_path = self._save_audiotrack()
+        self.audiotrack = Audio(audiotrack_path)
 
     def _save_audiotrack(self) -> str:
-        video_file_clip = VideoFileClip(self.file_path)
-        audio_file_clip = video_file_clip.audio
+        audiotrack_clip = self.clip.audio
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
             audiotrack_path = temp_file.name
-            audio_file_clip.write_audiofile(audiotrack_path, codec="pcm_s16le")
-
+            audiotrack_clip.write_audiofile(audiotrack_path, codec="pcm_s16le")
         return audiotrack_path
 
     def merge(self, audiotrack_path: str) -> str:
         log.debug("audiotrack_path: %s", audiotrack_path)
-        audio_file_clip = AudioFileClip(audiotrack_path)
-        video_file_clip = VideoFileClip(self.file_path).set_audio(audio_file_clip)
-        complited_video_path = self._save_video(video_file_clip)
+        audiotrack_clip = AudioFileClip(audiotrack_path)
+        self.clip = self.clip.set_audio(audiotrack_clip)
+        complited_video_path = self._save_video()
         return complited_video_path
 
-    def _save_video(self, video_file_clip: VideoFileClip) -> str:
-        format = self.format
-        with tempfile.NamedTemporaryFile(suffix=format, delete=False) as temp_file:
-            log.debug('video_path: %s', temp_file)
+    def _save_video(self) -> str:
+        with tempfile.NamedTemporaryFile(suffix=self.extension, delete=False) as temp_file:
             completed_video_path = temp_file.name
             log.debug('completed_video_path: %s', completed_video_path)
-            video_file_clip.write_videofile(completed_video_path, codec="libx264")
+            self.clip.write_videofile(completed_video_path, codec="libx264")
         return completed_video_path
