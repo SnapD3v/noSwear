@@ -1,30 +1,32 @@
-from filter import *
+from media import Audio, Video
+from processor import Processor
 
-from moviepy.editor import VideoFileClip, AudioFileClip
-
-
-def process_audio_file(input_audio_file_path: str, output_audio_file_path: str, word_list: List[dict]) -> None:
-    new_audio_file = filter_audio_file(input_audio_file_path, word_list)
-
-    new_audio_file.export(output_audio_file_path, format="wav")
+processor = Processor()
 
 
-def process_video_file(input_video_file_path: str, output_video_file_path: str, word_list: List[dict]) -> None:
-    audio_file_path = get_audio_from_video(input_video_file_path)
+def process(format: str, file_path: str, ban_words: list[str], sound: str):
 
-    new_audio_file = filter_audio_file(audio_file_path, word_list)
-    new_audio_file.export(audio_file_path, format="wav")
+    if format == 'Видео':
+        video = Video(file_path=file_path)
+        converted_audio = video.convert_audio_to_required_format(path=video.audiotrack_path)
+        complited_audio_path = processor.filter(
+            audio_path=video.audiotrack_path,
+            converted_audio_path=converted_audio.path,
+            ban_words=ban_words,
+            sound=sound
+            )
+        complited_video_path = video.merge(audiotrack_path=complited_audio_path)
 
-    new_video_file = VideoFileClip(input_video_file_path).set_audio(AudioFileClip(audio_file_path))
-    new_video_file.write_videofile(output_video_file_path)
+        return complited_video_path
 
-    os.remove(audio_file_path)
+    if format == 'Аудио':
+        audio = Audio(file_path=file_path)
+        converted_audio = audio.convert_audio_to_required_format(path=audio.file_path)
+        complited_audio_path = processor.filter(
+            audio_path=audio.file_path,
+            converted_audio_path=converted_audio.path,
+            ban_words=ban_words,
+            sound=sound
+            )
 
-
-def get_audio_from_video(video_file_path: str) -> str:
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-        audio_file_clip = VideoFileClip(video_file_path).audio
-        temp_file_path = temp_file.name        
-        audio_file_clip.write_audiofile(temp_file_path, codec="pcm_s16le")
-    
-    return temp_file_path
+        return complited_audio_path
