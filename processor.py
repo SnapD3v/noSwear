@@ -38,7 +38,7 @@ class Processor:
             sound_duration = word["end"] - word["start"]
             if sound == "Тишина":
                 new_audio_segment += AudioSegment.silent(duration=sound_duration)
-            elif sound == "Дильфин":
+            elif sound == "Дельфин":
                 pass
             elif sound == "Кря":
                 pass
@@ -48,13 +48,13 @@ class Processor:
             if i == len(timestamps) - 1:
                 new_audio_segment += audio_segment[timestamps[-1]["end"] :]
                 suffix = audio_path[audio_path.rindex(".") + 1 :]
-                complited_audio_path = self._save_segment(
+                completed_audio_path = self._save_segment(
                     audio_segment=new_audio_segment, suffix=suffix
                 )
                 break
 
             new_audio_segment += audio_segment[word["end"] : timestamps[i + 1]["start"]]
-        return complited_audio_path
+        return completed_audio_path
 
     def _get_timestamps_for_filtering(
         self,
@@ -95,6 +95,6 @@ class Processor:
 
     def _save_segment(self, audio_segment: AudioSegment, suffix: str) -> str:
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
-            complited_audio_path = temp_file.name
-            audio_segment.export(complited_audio_path, format=suffix)
-        return complited_audio_path
+            completed_audio_path = temp_file.name
+            audio_segment.export(completed_audio_path, format=suffix)
+        return completed_audio_path

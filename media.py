@@ -27,6 +27,8 @@ class Media(metaclass=ABCMeta):
         audio_segment = audio_segment.set_frame_rate(
             frame_rate=REQUIRED_FRAME_RATE)
 
+        return audio_segment
+
     def _save_segment(self, audio_segment: AudioSegment) -> str:
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
             converted_audio_path = temp_file.name

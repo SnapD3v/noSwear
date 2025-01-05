@@ -1,6 +1,7 @@
 import os
 
 from logger import ColorLogger
+from process import process
 
 log = ColorLogger(name="MediaManager").get_logger()
 
@@ -8,6 +9,8 @@ log = ColorLogger(name="MediaManager").get_logger()
 def process_file(file_path, replacement_sound, words_list):
     log.info(f"Starting process for {file_path} with sound={replacement_sound}")
     log.debug(f"Words list: {words_list}")
+
+    file_path = process(file_format="", file_path=file_path, ban_words=words_list, sound=replacement_sound)
     return file_path
 
 
