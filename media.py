@@ -4,6 +4,8 @@ from pydub import AudioSegment
 import tempfile
 
 from config import REQUIRED_COUNT_CHANNELS, REQUIRED_FRAME_RATE
+from logger import ColorLogger
+log = ColorLogger(name="Media").get_logger()
 
 
 class ConvertedAudio:
@@ -15,7 +17,10 @@ class ConvertedAudio:
 class Media(metaclass=ABCMeta):
 
     def convert_audio_to_required_format(self, path: str) -> ConvertedAudio:
-        audio_segment = AudioSegment.from_file(path)
+        log.info("Converting audio to standard format: %s", path)
+        suffix = path[path.rindex('.') + 1:].lower()
+        log.debug("Current suffix: %s", suffix)
+        audio_segment = AudioSegment.from_file(path, format='ogg')
         audio_segment = self._setup_default_params(audio_segment=audio_segment)
         converted_audio_path = self._save_segment(audio_segment=audio_segment)
         converted_audio = ConvertedAudio(converted_audio_path)
@@ -40,6 +45,8 @@ class Audio(Media):
 
     def __init__(self, file_path: str):
         self.file_path = file_path
+        self.format = self.file_path[self.file_path.rindex('.'):].lower()
+        self.audio_segment = AudioSegment.from_file(file_path, format=self.format)
 
 
 class Video(Media):
@@ -47,6 +54,7 @@ class Video(Media):
     def __init__(self, file_path: str):
         self.file_path = file_path
         self.audiotrack_path = self._save_audiotrack()
+        self.format = self.file_path[self.file_path.rindex('.'):].lower()
 
     def _save_audiotrack(self) -> str:
         video_file_clip = VideoFileClip(self.file_path)
@@ -58,15 +66,17 @@ class Video(Media):
         return audiotrack_path
 
     def merge(self, audiotrack_path: str) -> str:
+        log.debug("audiotrack_path: %s", audiotrack_path)
         audio_file_clip = AudioFileClip(audiotrack_path)
-        video_file_clip = VideoFileClip(
-            self.file_path).set_audio(audio_file_clip)
+        video_file_clip = VideoFileClip(self.file_path).set_audio(audio_file_clip)
         complited_video_path = self._save_video(video_file_clip)
         return complited_video_path
 
     def _save_video(self, video_file_clip: VideoFileClip) -> str:
-        suffix = self.file_path[self.file_path.rindex('.') + 1:]
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temp_file:
-            complited_video_path = temp_file.name
-            video_file_clip.write_videofile(complited_video_path, format=suffix)
-        return complited_video_path
+        format = self.format
+        with tempfile.NamedTemporaryFile(suffix=format, delete=False) as temp_file:
+            log.debug('video_path: %s', temp_file)
+            completed_video_path = temp_file.name
+            log.debug('completed_video_path: %s', completed_video_path)
+            video_file_clip.write_videofile(completed_video_path, codec="libx264")
+        return completed_video_path

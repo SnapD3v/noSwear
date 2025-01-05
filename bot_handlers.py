@@ -45,10 +45,10 @@ def finalize_processing(bot, chat_id, short_id):
     elif session.dictionary_choice and os.path.isfile(session.dictionary_choice):
         words_list = load_words_from_json(session.dictionary_choice)
     result_path = process_file(session.file_path, session.sound, words_list)
+    
     if os.path.isfile(result_path):
         with open(result_path, "rb") as rf:
             bot.send_document(chat_id, rf)
-        os.remove(result_path)
     else:
         log.warning(f"Result file not found for {short_id}")
         bot.send_message(chat_id, "Файл не найден.")
