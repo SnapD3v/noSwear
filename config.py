@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
-ALLOWED_MEDIA_TYPES = ["audio", "voice", "video", "video_note"]
+ALLOWED_MEDIA_TYPES = ["audio", "video", "video_note"]
 ESCAPE_TYPES = [
     "document",
     "photo",
