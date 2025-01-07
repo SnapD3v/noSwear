@@ -23,18 +23,18 @@ def build_sounds_markup(file_short_id):
 def build_dictionary_choice_markup(file_short_id):
     markup = types.InlineKeyboardMarkup()
     std = types.InlineKeyboardButton(
-        text="Использовать стандартный словарь",
+        text="Стандартный словарь",
         callback_data=f"DICT_STD|{file_short_id}"
     )
     custom = types.InlineKeyboardButton(
-        text="Загрузить свой словарь (JSON)",
+        text="Свой словарь (JSON)",
         callback_data=f"DICT_CUSTOM|{file_short_id}"
     )
     markup.add(std, custom)
     return markup
 
 
-def finalize_processing(bot, chat_id, short_id):
+def finalize_processing(bot, message, short_id):
     session = GLOBAL_FILE_DICT.get(short_id)
     if not session:
         log.error(f"No session found for {short_id}")
@@ -44,15 +44,28 @@ def finalize_processing(bot, chat_id, short_id):
         pass
     elif session.dictionary_choice and os.path.isfile(session.dictionary_choice):
         ban_words = load_words_from_json(session.dictionary_choice)
-    result_path = process_file(session.file_path, session.sound, ban_words=ban_words)
-
+    bot.edit_message_text(
+        chat_id=message.chat.id,
+        message_id=message.message_id,
+        text="Обрабатываем..."
+    )
+    try:
+        result_path = process_file(
+            session.file_path, session.sound, ban_words=ban_words)
+    except FileNotFoundError:
+        log.warning(f"Result file not found for {short_id}")
+        bot.send_message(
+            message.chat.id, "Кто-то слишком часто нажимал кнопочки и все сломал(")
+        if short_id in GLOBAL_FILE_DICT:
+            del GLOBAL_FILE_DICT[short_id]
+        return
     if os.path.isfile(result_path):
         with open(result_path, "rb") as rf:
-            bot.send_document(chat_id, rf)
+            bot.send_document(message.chat.id, rf)
         os.remove(result_path)
     else:
         log.warning(f"Result file not found for {short_id}")
-        bot.send_message(chat_id, "Файл не найден.")
+        bot.send_message(message.chat.id, "Файл не найден.")
     if session.dictionary_choice and os.path.isfile(session.dictionary_choice):
         remove_custom_dictionary(session.dictionary_choice)
     if short_id in GLOBAL_FILE_DICT:
@@ -61,7 +74,8 @@ def finalize_processing(bot, chat_id, short_id):
 
 def on_start(bot, message):
     log.info(f"Received /start from {message.chat.id}")
-    bot.send_message(message.chat.id, "Добро пожаловать! Отправьте аудио или видео файл.")
+    bot.send_message(
+        message.chat.id, "Добро пожаловать! Отправьте аудио или видео файл.")
 
 
 def on_media(bot, message):
@@ -98,14 +112,16 @@ def on_document(bot, message):
             return
         try:
             fi = bot.get_file(message.document.file_id)
-            dict_file_name = f"dict_{message.chat.id}_{message.document.file_id}.json"
+            dict_file_name = f"dict_{message.chat.id}_{
+                message.document.file_id}.json"
             downloaded = bot.download_file(fi.file_path)
             with open(dict_file_name, "wb") as f:
                 f.write(downloaded)
             GLOBAL_FILE_DICT[short_id].dictionary_choice = dict_file_name
             GLOBAL_FILE_DICT[short_id].waiting_for_dict_file = False
-            bot.send_message(message.chat.id, "Словарь загружен, обрабатываем...")
-            finalize_processing(bot, message.chat.id, short_id)
+            bot.send_message(
+                message.chat.id, "Словарь загружен, обрабатываем...")
+            finalize_processing(bot, message, short_id)
         except Exception as e:
             log.error(f"Error loading custom dictionary: {e}")
             bot.send_message(message.chat.id, "Ошибка при загрузке словаря.")
@@ -115,7 +131,8 @@ def on_document(bot, message):
 
 def on_unsupported(bot, message):
     log.debug(f"Unsupported content from {message.chat.id}")
-    bot.send_message(message.chat.id, "Поддерживаются только аудио или видео файлы.")
+    bot.send_message(
+        message.chat.id, "Поддерживаются только аудио или видео файлы.")
 
 
 def on_callback(bot, call):
@@ -139,7 +156,7 @@ def on_callback(bot, call):
         )
     elif action == "DICT_STD":
         GLOBAL_FILE_DICT[short_id].dictionary_choice = "standard"
-        finalize_processing(bot, call.message.chat.id, short_id)
+        finalize_processing(bot, call.message, short_id)
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,

@@ -45,13 +45,13 @@ class Processor:
             filtered_audio_segment += audio.segment[word["end"] : timestamps[i + 1]["start"]]
         return completed_audio_path
 
-    def _get_filtered_timestamps(self, file_path: str, ban_words: list[str]) -> list[dict]:
+    def _get_filtered_timestamps(self, file_path: str, ban_words: list[str]|set[str]) -> list[dict]:
         recognaze_info = self._get_recognaze_info(file_path)
         timestamps = recognaze_info['result']
         filtered_timestamps = []
         
         if not ban_words:
-            ban_words = self._detect_profanity(recognaze_info['text'])
+            ban_words = set(self._detect_profanity(recognaze_info['text']))
         
         log.info('Awoided words: %s', ban_words)
         

@@ -34,8 +34,10 @@ def process(file_path: str, ban_words: list[str], sound_name: str):
                 sound_name=sound_name,
             )
             log.debug('Completed path: %s', completed_audio_path)
-            os.remove(audio.file_path)
-            os.remove(audio.converted_audio_path)
+            if os.path.isfile(audio.file_path):
+                os.remove(audio.file_path)
+            if os.path.isfile(audio.converted_audio_path):
+                os.remove(audio.converted_audio_path)
             return completed_audio_path
         return file_path
 
