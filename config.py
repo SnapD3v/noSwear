@@ -4,10 +4,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-ALLOWED_MEDIA_TYPES = ["audio", "video", "video_note"]
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+ALLOWED_MEDIA_TYPES = ["audio", "video", "video_note", "document"]
 ESCAPE_TYPES = [
-    "document",
     "photo",
     "sticker",
     "location",
@@ -21,7 +20,7 @@ ESCAPE_TYPES = [
 ]
 SOUNDS = ["Тишина", "Дельфин", "Кря", "Пароход", "Пик"]
 
-GLOBAL_FILE_DICT = {}
+GLOBAL_FILE_DICT: dict = {}
 
 
 MODEL_PATH = "vosk-model-small-ru-0.22"
@@ -32,3 +31,4 @@ FRAME_BLOCK_SIZE = 32000
 
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi']
 AUDIO_EXTENSIONS = ['mp3', 'wav', 'raw', 'ogg']
+ALLOWED_MIME = ["audio/x-wav"]

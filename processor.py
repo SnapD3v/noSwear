@@ -1,5 +1,6 @@
 import json
 from pydub import AudioSegment
+from re import findall
 import tempfile
 from vosk import KaldiRecognizer, Model, SetLogLevel
 import wave
@@ -45,8 +46,15 @@ class Processor:
         return completed_audio_path
 
     def _get_filtered_timestamps(self, file_path: str, ban_words: list[str]) -> list[dict]:
-        timestamps = self._get_timestamps(file_path)
+        recognaze_info = self._get_recognaze_info(file_path)
+        timestamps = recognaze_info['result']
         filtered_timestamps = []
+        
+        if not ban_words:
+            ban_words = self._detect_profanity(recognaze_info['text'])
+        
+        log.info('Awoided words: %s', ban_words)
+        
         for word_info in timestamps:
             if word_info["word"] in ban_words:
                 filtered_timestamps.append(
@@ -58,7 +66,7 @@ class Processor:
                 )
         return filtered_timestamps
 
-    def _get_timestamps(self, file_path: str) -> list[dict]:
+    def _get_recognaze_info(self, file_path: str) -> dict:
         with wave.open(file_path, "rb") as wave_file:
             recognizer = KaldiRecognizer(self.model, REQUIRED_FRAME_RATE)
             recognizer.SetWords(True)
@@ -67,11 +75,14 @@ class Processor:
                 if len(data) == 0:
                     break
                 recognizer.AcceptWaveform(data)
-            final_result = json.loads(recognizer.FinalResult())
-        if "result" in final_result:
-            timestamps = final_result["result"]
-            return timestamps
-        return []
+            recognaze_info = json.loads(recognizer.FinalResult())
+        return recognaze_info
+
+    def _detect_profanity(self, text: str) -> list[str]:
+
+        regex = r"(?iux)(?<![а-яё])(?:(?:(?:у|[нз]а|(?:хитро|не)?вз?[ыьъ]|с[ьъ]|(?:и|ра)[зс]ъ?|(?:о[тб]|п[оа]д)[ьъ]?|(?:\S(?=[а-яё]))+?[оаеи-])-?)?(?:[её](?:б(?!о[рй]|рач)|п[уа](?:ц|тс))|и[пб][ае][тцд][ьъ]).*?|(?:(?:н[иеа]|(?:ра|и)[зс]|[зд]?[ао](?:т|дн[оа])?|с(?:м[еи])?|а[пб]ч|в[ъы]?|пр[еи])-?)?ху(?:[яйиеёю]|л+и(?!ган)).*?|бл(?:[эя]|еа?)(?:[дт][ьъ]?)?|\S*?(?:п(?:[иеё]зд|ид[аое]?р|ед(?:р(?!о)|[аое]р|ик)|охую)|бля(?:[дбц]|тс)|[ое]ху[яйиеё]|хуйн).*?|(?:о[тб]?|про|на|вы)?м(?:анд(?:[ауеыи](?:л(?:и[сзщ])?[ауеиы])?|ой|[ао]в.*?|юк(?:ов|[ауи])?|е[нт]ь|ища)|уд(?:[яаиое].+?|е?н(?:[ьюия]|ей))|[ао]л[ао]ф[ьъ](?:[яиюе]|[еёо]й))|елд[ауые].*?|ля[тд]ь|(?:[нз]а|по)х)(?![а-яё])"
+        matches = findall(regex, text)
+        return matches
 
     def _add_sound(self, duration: int, name: str) -> AudioSegment:
         if name == "Тишина":

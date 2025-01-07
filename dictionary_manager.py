@@ -16,6 +16,6 @@ def load_words_from_json(path):
 
 
 def remove_custom_dictionary(path):
-    if os.path.isfile(path) and path != "words.json":
+    if os.path.isfile(path):
         os.remove(path)
         log.info(f"Removed custom dictionary {path}")

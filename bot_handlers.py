@@ -3,7 +3,7 @@ import uuid
 
 from telebot import types
 
-from config import GLOBAL_FILE_DICT, SOUNDS
+from config import ALLOWED_MIME, GLOBAL_FILE_DICT, SOUNDS
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
 from logger import ColorLogger
 from media_manager import process_file, download_and_save_file
@@ -40,8 +40,8 @@ def finalize_processing(bot, chat_id, short_id):
         log.error(f"No session found for {short_id}")
         return
     ban_words = []
-    if session.dictionary_choice == "words.json" and os.path.isfile("words.json"):
-        ban_words = load_words_from_json("words.json")
+    if session.dictionary_choice == "standard":
+        pass
     elif session.dictionary_choice and os.path.isfile(session.dictionary_choice):
         ban_words = load_words_from_json(session.dictionary_choice)
     result_path = process_file(session.file_path, session.sound, ban_words=ban_words)
@@ -66,6 +66,9 @@ def on_start(bot, message):
 
 def on_media(bot, message):
     log.info(f"Media message: {message.content_type} from {message.chat.id}")
+    if message.content_type == "document" and message.document.mime_type not in ALLOWED_MIME:
+        bot.send_message(message.chat.id, "Этот формат не поддерживается.")
+        return
     file_id = getattr(message, message.content_type).file_id
     if not file_id:
         bot.send_message(message.chat.id, "Не удалось получить файл.")
@@ -135,7 +138,7 @@ def on_callback(bot, call):
             reply_markup=build_dictionary_choice_markup(short_id)
         )
     elif action == "DICT_STD":
-        GLOBAL_FILE_DICT[short_id].dictionary_choice = "words.json"
+        GLOBAL_FILE_DICT[short_id].dictionary_choice = "standard"
         finalize_processing(bot, call.message.chat.id, short_id)
         bot.edit_message_text(
             chat_id=call.message.chat.id,
