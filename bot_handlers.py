@@ -3,7 +3,7 @@ import uuid
 
 from telebot import types
 
-from config import GLOBAL_FILE_DICT
+from config import GLOBAL_FILE_DICT, SOUNDS
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
 from logger import ColorLogger
 from media_manager import process_file, download_and_save_file
@@ -14,7 +14,7 @@ log = ColorLogger(name="BotHandlers").get_logger()
 
 def build_sounds_markup(file_short_id):
     markup = types.InlineKeyboardMarkup()
-    for sound in ["Тишина", "Дельфин", "Кря", "Пик"]:
+    for sound in SOUNDS:
         cb = f"SOUND|{file_short_id}|{sound}"
         markup.add(types.InlineKeyboardButton(text=sound, callback_data=cb))
     return markup
@@ -39,13 +39,13 @@ def finalize_processing(bot, chat_id, short_id):
     if not session:
         log.error(f"No session found for {short_id}")
         return
-    words_list = []
+    ban_words = []
     if session.dictionary_choice == "words.json" and os.path.isfile("words.json"):
-        words_list = load_words_from_json("words.json")
+        ban_words = load_words_from_json("words.json")
     elif session.dictionary_choice and os.path.isfile(session.dictionary_choice):
-        words_list = load_words_from_json(session.dictionary_choice)
-    result_path = process_file(session.file_path, session.sound, words_list)
-    
+        ban_words = load_words_from_json(session.dictionary_choice)
+    result_path = process_file(session.file_path, session.sound, ban_words=ban_words)
+
     if os.path.isfile(result_path):
         with open(result_path, "rb") as rf:
             bot.send_document(chat_id, rf)

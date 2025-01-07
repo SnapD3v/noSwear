@@ -13,33 +13,31 @@ class Audio:
     def __init__(self, file_path: str):
         base, ext = os.path.splitext(file_path)
 
-        self.file_path = file_path
-        self.extension = ext
-        self.segment = AudioSegment.from_file(self.file_path, format=self.extension[1:])
+        self.file_path: str = file_path
+        self.extension: str = ext
+        self.segment: AudioSegment = AudioSegment.from_file(self.file_path, format=self.extension[1:])
+        self.converted_segment: AudioSegment = self.segment
+        self.converted_audio_path: str = self.file_path
 
-        self.converted_segment = None
-        self.converted_segment_path = None
-
-        log.info("Converting audio to standard format: %s", self.file_path)
         self._convert_audio_to_required_format()
+        log.info("Converting audio to standard format: %s", self.converted_audio_path)
 
     def _convert_audio_to_required_format(self):
-
+        self._save_segment_as_wav()
         self._setup_default_params()
-        self._save_converted_segment()
-        log.debug("Saved segment: %s", self.converted_segment_path)
+        os.remove(self.converted_audio_path)
+        self._save_segment_as_wav()
 
     def _setup_default_params(self):
-        converted_segment = self.segment
-        converted_segment = converted_segment.set_channels(channels=REQUIRED_COUNT_CHANNELS)
-        converted_segment = converted_segment.set_frame_rate(frame_rate=REQUIRED_FRAME_RATE)
-        self.converted_segment = converted_segment
+        self.converted_segment = self.converted_segment.set_channels(channels=REQUIRED_COUNT_CHANNELS)
+        self.converted_segment = self.converted_segment.set_frame_rate(frame_rate=REQUIRED_FRAME_RATE)
 
-    def _save_converted_segment(self):
+    def _save_segment_as_wav(self):
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
-            converted_segment_path = temp_file.name
-            self.converted_segment.export(converted_segment_path, format="wav")
-        self.converted_segment_path = converted_segment_path
+            file_path = temp_file.name
+            self.converted_segment.export(file_path, format="wav")
+            self.converted_audio_path = file_path
+            self.converted_segment = AudioSegment.from_wav(file_path)
 
 
 class Video:
