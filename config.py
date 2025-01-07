@@ -23,7 +23,7 @@ SOUNDS = ["Тишина", "Дельфин", "Кря", "Пароход", "Пик"
 GLOBAL_FILE_DICT: dict = {}
 
 
-MODEL_PATH = "vosk-model-small-ru-0.22"
+MODEL_PATH = "vosk-model-ru-0.42"
 
 REQUIRED_COUNT_CHANNELS = 1
 REQUIRED_FRAME_RATE = 16000
