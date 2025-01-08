@@ -57,6 +57,8 @@ def finalize_processing(bot, message, short_id):
         bot.send_message(
             message.chat.id, "Кто-то слишком часто нажимал кнопочки и все сломал(")
         if short_id in GLOBAL_FILE_DICT:
+            if os.path.isfile(GLOBAL_FILE_DICT[short_id].file_path):
+                os.remove(GLOBAL_FILE_DICT[short_id].file_path)
             del GLOBAL_FILE_DICT[short_id]
         return
     if os.path.isfile(result_path):
