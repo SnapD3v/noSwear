@@ -23,11 +23,11 @@ def build_sounds_markup(file_short_id):
 def build_dictionary_choice_markup(file_short_id):
     markup = types.InlineKeyboardMarkup()
     std = types.InlineKeyboardButton(
-        text="Стандартный словарь",
+        text="Встроенный",
         callback_data=f"DICT_STD|{file_short_id}"
     )
     custom = types.InlineKeyboardButton(
-        text="Свой словарь (JSON)",
+        text="Твой",
         callback_data=f"DICT_CUSTOM|{file_short_id}"
     )
     markup.add(std, custom)
@@ -151,7 +151,10 @@ def on_callback(bot, call):
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text=f"Звук {chosen_sound} выбран. Выберите словарь:",
+            text=f"Звук {chosen_sound} выбран. \n"
+                 f"1. Встроенный словарь, содержащий русскую ненормативную лексику. \n"
+                 f"2. Твой словарь в формате JSON с учётом склонений\n"
+                 f"Выберите словарь:",
             reply_markup=build_dictionary_choice_markup(short_id)
         )
     elif action == "DICT_STD":
