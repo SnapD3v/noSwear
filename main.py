@@ -34,4 +34,4 @@ def callback_query_handler(call):
 
 if __name__ == "__main__":
     logger.info("Bot is running")
-    bot.polling()
+    bot.polling(none_stop=True)

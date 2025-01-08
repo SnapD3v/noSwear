@@ -112,8 +112,8 @@ def on_document(bot, message):
             return
         try:
             fi = bot.get_file(message.document.file_id)
-            dict_file_name = f"dict_{message.chat.id}_{
-                message.document.file_id}.json"
+            dict_file_name = f"dict_{message.chat.id}_" \
+                             f"{message.document.file_id}.json"
             downloaded = bot.download_file(fi.file_path)
             with open(dict_file_name, "wb") as f:
                 f.write(downloaded)
