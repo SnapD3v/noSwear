@@ -4,7 +4,7 @@ import uuid
 from telebot import types, TeleBot
 from telebot.types import Message
 
-from config import ALLOWED_MIME, GLOBAL_FILE_DICT, SOUNDS
+from config import ALLOWED_MIME, GLOBAL_FILE_DICT, SOUNDS, ALLOWED_MEDIA_TYPES
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
 from logger import ColorLogger
 from media_manager import process_file, download_and_save_file
@@ -124,6 +124,9 @@ def on_document(bot: TeleBot, message: Message):
         except Exception as e:
             log.error(f"Error loading custom dictionary: {e}")
             bot.send_message(message.chat.id, "Ошибка при загрузке словаря.")
+
+    elif message.content_type in ALLOWED_MEDIA_TYPES:
+        on_media(bot, message)
     else:
         bot.send_message(message.chat.id, "Этот тип не поддерживается.")
 
