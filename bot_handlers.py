@@ -1,7 +1,8 @@
 import os
 import uuid
 
-from telebot import types
+from telebot import types, TeleBot
+from telebot.types import Message
 
 from config import ALLOWED_MIME, GLOBAL_FILE_DICT, SOUNDS
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
@@ -92,29 +93,34 @@ def on_media(bot, message):
     )
 
 
-def on_document(bot, message):
+def on_document(bot: TeleBot, message: Message):
     log.info(f"Document message from {message.chat.id}")
     short_id = None
-    for fsid, sess in GLOBAL_FILE_DICT.items():
-        if sess.waiting_for_dict_file:
-            short_id = fsid
+    for media_session_id, session in GLOBAL_FILE_DICT.items():
+        if session.waiting_for_dict_file:
+            short_id = media_session_id
             break
     if short_id and message.document:
         if not message.document.file_name.lower().endswith(".json"):
             bot.send_message(message.chat.id, "Требуется файл *.json.")
             return
         try:
-            fi = bot.get_file(message.document.file_id)
-            dict_file_name = f"dict_{message.chat.id}_" \
-                             f"{message.document.file_id}.json"
-            downloaded = bot.download_file(fi.file_path)
-            with open(dict_file_name, "wb") as f:
-                f.write(downloaded)
+            file = bot.get_file(message.document.file_id)
+            dict_file_name = f"dict_{message.chat.id}_{message.document.file_id}.json"
+            downloaded = bot.download_file(file.file_path)
+
+            with open(dict_file_name, "wb") as file_object:
+                file_object.write(downloaded)
+
             GLOBAL_FILE_DICT[short_id].dictionary_choice = dict_file_name
             GLOBAL_FILE_DICT[short_id].waiting_for_dict_file = False
-            bot.send_message(
-                message.chat.id, "Словарь загружен, обрабатываем...")
-            finalize_processing(bot, message, short_id)
+            dictionary_info_message = bot.send_message(text="Словарь загружен", chat_id=message.chat.id)
+            finalize_processing(bot, dictionary_info_message, short_id)
+
+            bot.delete_message(
+                chat_id=dictionary_info_message.chat.id,
+                message_id=dictionary_info_message.message_id,
+            )
         except Exception as e:
             log.error(f"Error loading custom dictionary: {e}")
             bot.send_message(message.chat.id, "Ошибка при загрузке словаря.")
@@ -128,7 +134,7 @@ def on_unsupported(bot, message):
         message.chat.id, "Поддерживаются только аудио или видео файлы.")
 
 
-def on_callback(bot, call):
+def on_callback(bot: TeleBot, call):
     log.debug(f"Callback from {call.from_user.id}: {call.data}")
     parts = call.data.split("|")
     if len(parts) < 2:
@@ -153,10 +159,9 @@ def on_callback(bot, call):
     elif action == "DICT_STD":
         GLOBAL_FILE_DICT[short_id].dictionary_choice = "standard"
         finalize_processing(bot, call.message, short_id)
-        bot.edit_message_text(
+        bot.delete_message(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text="Используем стандартный словарь, обрабатываем..."
         )
     elif action == "DICT_CUSTOM":
         GLOBAL_FILE_DICT[short_id].waiting_for_dict_file = True

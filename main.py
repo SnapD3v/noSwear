@@ -12,14 +12,14 @@ def start_cmd(message):
     on_start(bot, message)
 
 
-@bot.message_handler(content_types=ALLOWED_MEDIA_TYPES)
-def media_handler(message):
-    on_media(bot, message)
-
-
 @bot.message_handler(content_types=ESCAPE_TYPES)
 def doc_handler(message):
     on_document(bot, message)
+
+
+@bot.message_handler(content_types=ALLOWED_MEDIA_TYPES)
+def media_handler(message):
+    on_media(bot, message)
 
 
 @bot.message_handler(func=lambda m: True)
