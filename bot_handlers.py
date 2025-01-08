@@ -49,18 +49,9 @@ def finalize_processing(bot, message, short_id):
         message_id=message.message_id,
         text="Обрабатываем..."
     )
-    try:
-        result_path = process_file(
-            session.file_path, session.sound, ban_words=ban_words)
-    except FileNotFoundError:
-        log.warning(f"Result file not found for {short_id}")
-        bot.send_message(
-            message.chat.id, "Кто-то слишком часто нажимал кнопочки и все сломал(")
-        if short_id in GLOBAL_FILE_DICT:
-            if os.path.isfile(GLOBAL_FILE_DICT[short_id].file_path):
-                os.remove(GLOBAL_FILE_DICT[short_id].file_path)
-            del GLOBAL_FILE_DICT[short_id]
-        return
+    result_path = process_file(
+        session.file_path, session.sound, ban_words=ban_words)
+
     if os.path.isfile(result_path):
         with open(result_path, "rb") as rf:
             bot.send_document(message.chat.id, rf)
