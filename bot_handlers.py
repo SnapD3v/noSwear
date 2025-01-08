@@ -27,7 +27,7 @@ def build_dictionary_choice_markup(file_short_id):
         callback_data=f"DICT_STD|{file_short_id}"
     )
     custom = types.InlineKeyboardButton(
-        text="Твой",
+        text="Мой",
         callback_data=f"DICT_CUSTOM|{file_short_id}"
     )
     markup.add(std, custom)
