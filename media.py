@@ -61,8 +61,8 @@ class Video:
         log.debug("audiotrack_path: %s", audiotrack_path)
         audiotrack_clip = AudioFileClip(audiotrack_path)
         self.clip = self.clip.set_audio(audiotrack_clip)
-        complited_video_path = self._save_video()
-        return complited_video_path
+        completed_video_path = self._save_video()
+        return completed_video_path
 
     def _save_video(self) -> str:
         with tempfile.NamedTemporaryFile(suffix=self.extension, delete=False) as temp_file:
