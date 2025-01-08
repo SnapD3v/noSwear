@@ -1,5 +1,7 @@
 import logging
 import sys
+from typing import Optional
+
 from colorama import init, Fore, Style
 
 
@@ -8,7 +10,7 @@ class ColorLogger:
     Класс для создания логгера.
     """
 
-    def __init__(self, name: str = __name__, level: int = logging.DEBUG, log_file: str = None):
+    def __init__(self, name: str = __name__, level: int = logging.DEBUG, log_file: Optional[str] = None):
         """
         :param name: Имя логгера (по умолчанию берётся имя модуля).
         :param level: Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL).

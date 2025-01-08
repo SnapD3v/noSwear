@@ -2,6 +2,8 @@ import os
 
 from dotenv import load_dotenv
 
+from media_session import MediaSession
+
 load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -20,7 +22,7 @@ ESCAPE_TYPES = [
 ]
 SOUNDS = ["Тишина", "Дельфин", "Кря", "Пароход", "Пик"]
 
-GLOBAL_FILE_DICT: dict = {}
+GLOBAL_FILE_DICT: dict[str, MediaSession] = {}
 
 
 MODEL_PATH = "vosk-model-ru-0.42"
@@ -31,4 +33,4 @@ FRAME_BLOCK_SIZE = 32000
 
 VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi']
 AUDIO_EXTENSIONS = ['mp3', 'wav', 'raw', 'ogg']
-ALLOWED_MIME = ["audio/x-wav"]
+ALLOWED_MIME = ["audio/x-wav", "application/json"]
