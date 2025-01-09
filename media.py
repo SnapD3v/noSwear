@@ -3,7 +3,6 @@ from moviepy.editor import VideoFileClip, AudioFileClip
 from pydub import AudioSegment
 import tempfile
 
-from config import REQUIRED_COUNT_CHANNELS, REQUIRED_FRAME_RATE
 from logger import ColorLogger
 
 log = ColorLogger(name="Media").get_logger()
@@ -30,6 +29,7 @@ class Audio:
         self._save_segment_as_wav()
 
     def _setup_default_params(self):
+        from config import REQUIRED_COUNT_CHANNELS, REQUIRED_FRAME_RATE
         self.converted_segment = self.converted_segment.set_channels(channels=REQUIRED_COUNT_CHANNELS)
         self.converted_segment = self.converted_segment.set_frame_rate(frame_rate=REQUIRED_FRAME_RATE)
 

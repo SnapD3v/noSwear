@@ -12,11 +12,13 @@ from media import Audio
 SetLogLevel(0)
 log = ColorLogger(name="Media").get_logger()
 
+
 class Processor:
     """Обработчик аудиофайлов"""
 
     def __init__(self):
         self.model = Model(MODEL_PATH)
+        self.__load_regex()
 
     def filter(self, audio: Audio, ban_words: list[str], sound_name: str) -> str:
         timestamps: list[dict] = self._get_filtered_timestamps(
@@ -36,25 +38,25 @@ class Processor:
             )
 
             if i == len(timestamps) - 1:
-                filtered_audio_segment += audio.segment[timestamps[-1]["end"] :]
+                filtered_audio_segment += audio.segment[timestamps[-1]["end"]:]
                 completed_audio_path = self._save_segment(
                     audio_segment=filtered_audio_segment, suffix=audio.extension
                 )
                 break
 
-            filtered_audio_segment += audio.segment[word["end"] : timestamps[i + 1]["start"]]
+            filtered_audio_segment += audio.segment[word["end"]: timestamps[i + 1]["start"]]
         return completed_audio_path
 
-    def _get_filtered_timestamps(self, file_path: str, ban_words: list[str]|set[str]) -> list[dict]:
+    def _get_filtered_timestamps(self, file_path: str, ban_words: list[str] | set[str]) -> list[dict]:
         recognaze_info = self._get_recognaze_info(file_path)
         timestamps = recognaze_info['result']
         filtered_timestamps = []
-        
+
         if not ban_words:
             ban_words = set(self._detect_profanity(recognaze_info['text']))
-        
+
         log.info('Awoided words: %s', ban_words)
-        
+
         for word_info in timestamps:
             if word_info["word"] in ban_words:
                 filtered_timestamps.append(
@@ -79,9 +81,7 @@ class Processor:
         return recognaze_info
 
     def _detect_profanity(self, text: str) -> list[str]:
-
-        regex = r"(?iux)(?<![а-яё])(?:(?:(?:у|[нз]а|(?:хитро|не)?вз?[ыьъ]|с[ьъ]|(?:и|ра)[зс]ъ?|(?:о[тб]|п[оа]д)[ьъ]?|(?:\S(?=[а-яё]))+?[оаеи-])-?)?(?:[её](?:б(?!о[рй]|рач)|п[уа](?:ц|тс))|и[пб][ае][тцд][ьъ]).*?|(?:(?:н[иеа]|(?:ра|и)[зс]|[зд]?[ао](?:т|дн[оа])?|с(?:м[еи])?|а[пб]ч|в[ъы]?|пр[еи])-?)?ху(?:[яйиеёю]|л+и(?!ган)).*?|бл(?:[эя]|еа?)(?:[дт][ьъ]?)?|\S*?(?:п(?:[иеё]зд|ид[аое]?р|ед(?:р(?!о)|[аое]р|ик)|охую)|бля(?:[дбц]|тс)|[ое]ху[яйиеё]|хуйн).*?|(?:о[тб]?|про|на|вы)?м(?:анд(?:[ауеыи](?:л(?:и[сзщ])?[ауеиы])?|ой|[ао]в.*?|юк(?:ов|[ауи])?|е[нт]ь|ища)|уд(?:[яаиое].+?|е?н(?:[ьюия]|ей))|[ао]л[ао]ф[ьъ](?:[яиюе]|[еёо]й))|елд[ауые].*?|ля[тд]ь|(?:[нз]а|по)х)(?![а-яё])"
-        matches = findall(regex, text)
+        matches = findall(self.regex, text)
         return matches
 
     def _add_sound(self, duration: int, name: str) -> AudioSegment:
@@ -96,3 +96,8 @@ class Processor:
             completed_audio_path = completed_audio.name
             audio_segment.export(completed_audio_path, format=suffix[1:])
         return completed_audio_path
+
+    def __load_regex(self):
+        with open("profanity_regex.txt", "r", encoding="utf-8") as file:
+            regex = file.read().strip()
+        self.regex = regex
