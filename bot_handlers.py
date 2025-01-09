@@ -153,9 +153,9 @@ def on_callback(bot: TeleBot, call):
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.message_id,
-            text=f"Звук {chosen_sound} выбран. \n"
+            text=f"Звук {chosen_sound} выбран. \n\n"
                  f"1. Встроенный словарь, содержащий русскую ненормативную лексику. \n"
-                 f"2. Твой словарь в формате JSON с учётом склонений\n"
+                 f"2. Твой словарь в формате JSON с учётом склонений\n\n"
                  f"Выберите словарь:",
             reply_markup=build_dictionary_choice_markup(short_id)
         )
