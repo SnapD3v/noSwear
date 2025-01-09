@@ -5,6 +5,7 @@ import tempfile
 
 from config import REQUIRED_COUNT_CHANNELS, REQUIRED_FRAME_RATE
 from logger import ColorLogger
+
 log = ColorLogger(name="Media").get_logger()
 
 
@@ -70,3 +71,11 @@ class Video:
             log.debug('completed_video_path: %s', completed_video_path)
             self.clip.write_videofile(completed_video_path, codec="libx264")
         return completed_video_path
+
+
+class MediaSession:
+    def __init__(self, file_path, sound=None, dictionary_choice=None, waiting_for_dict_file=False):
+        self.file_path = file_path
+        self.sound = sound
+        self.dictionary_choice = dictionary_choice
+        self.waiting_for_dict_file = waiting_for_dict_file

@@ -8,7 +8,7 @@ from config import ALLOWED_MIME, GLOBAL_FILE_DICT, SOUNDS, ALLOWED_MEDIA_TYPES
 from dictionary_manager import load_words_from_json, remove_custom_dictionary
 from logger import ColorLogger
 from media_manager import process_file, download_and_save_file
-from media_session import MediaSession
+from media import MediaSession
 
 log = ColorLogger(name="BotHandlers").get_logger()
 

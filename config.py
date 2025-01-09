@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 
-from media_session import MediaSession
+from media import MediaSession
 
 load_dotenv()
 
